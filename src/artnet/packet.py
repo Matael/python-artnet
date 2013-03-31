@@ -1,4 +1,7 @@
-import socket, struct, itertools, time
+import socket
+import struct
+import itertools
+import time
 
 
 HEADER = 'Art-Net\0'
