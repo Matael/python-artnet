@@ -12,13 +12,13 @@ def lohi(i):
 
 class ArtNetPacket(object):
 	opcode = None
-	
+
 	def __init__(self, source=None, physical=0, universe=0):
 		self.sequence = 0
 		self.physical = physical
 		self.universe = universe
 		self.source = source
-	
+
 	def __repr__(self):
 		return '<%(klass)s from %(source)s:%(universe)s/%(physical)s>' % dict(
 			klass    = self.__class__.__name__,
@@ -26,10 +26,10 @@ class ArtNetPacket(object):
 			universe = self.universe,
 			physical = self.physical,
 		)
-	
+
 	def encode(self):
 		raise NotImplementedError('encode')
-	
+
 	@classmethod
 	def parse(cls, address, data):
 		[opcode] = struct.unpack('!H', data[8:10])
@@ -46,13 +46,13 @@ class ArtNetPacket(object):
 
 class DmxPacket(ArtNetPacket):
 	opcode = 0x0050
-	
+
 	def __init__(self, frame=None, sequence=0, **kwargs):
 		super(DmxPacket, self).__init__(**kwargs)
 		from artnet import dmx
 		self.sequence = sequence
 		self.frame = frame or dmx.Frame()
-	
+
 	def __str__(self):
 		return '<DMX(%(sequence)s): %(channels)s>' % dict(
 			sequence = self.sequence,
@@ -63,31 +63,31 @@ class DmxPacket(ArtNetPacket):
 				) for address in range(len(self.channels)) if self.frame[address]
 			])
 		)
-	
+
 	def encode(self):
 		proto_lo, proto_hi = lohi(PROTOCOL_VERSION)
 		len_lo, len_hi = lohi(512)
-		header = struct.pack('!8sHBBBBHBB', 
+		header = struct.pack('!8sHBBBBHBB',
 			HEADER, self.opcode, proto_hi, proto_lo,
 			self.sequence, self.physical, self.universe, len_hi, len_lo)
 		return header + ''.join([struct.pack('!B', 0 if c is None else c) for c in self.frame])
-	
+
 	@classmethod
 	def decode(cls, address, data):
 		return cls(source=address)
 
 class PollPacket(ArtNetPacket):
 	opcode = 0x0020
-	
+
 	def __init__(self, ttm=0x02, priority=0, **kwargs):
 		super(PollPacket, self).__init__(**kwargs)
 		self.ttm = ttm
 		self.priority = priority
-	
+
 	def encode(self):
 		proto_lo, proto_hi = lohi(PROTOCOL_VERSION)
 		return struct.pack('!8sHBBBB', HEADER, self.opcode, proto_hi, proto_lo, self.ttm, self.priority)
-	
+
 	@classmethod
 	def decode(cls, address, data):
 		parts = struct.unpack(''.join([
@@ -102,16 +102,16 @@ class PollPacket(ArtNetPacket):
 
 class PollReplyPacket(ArtNetPacket):
 	opcode = 0x0021
-	
+
 	def __init__(self, replydata, **kwargs):
 		super(PollReplyPacket, self).__init__(**kwargs)
 		self.replydata = replydata
-	
+
 	def encode(self):
 		ip = [int(x) for x in socket.gethostbyname(socket.gethostname()).split('.')]
 		data = (HEADER, self.opcode, ip[0], ip[1], ip[2], ip[3], ARTNET_PORT,
 			0, 1, # version
-			0, 0, # universe 
+			0, 0, # universe
 			1, 144, # oem
 			0, 2, 0, # ubea-version, status1, esta man
 			'python-artnet-lib\x00', # short name
@@ -166,7 +166,7 @@ class PollReplyPacket(ArtNetPacket):
 			'B',   # 36 mac address lo
 			'B',   # extra
 		]), *data)
-	
+
 	@classmethod
 	def decode(cls, address, data):
 		if(len(data) == 207):
@@ -215,10 +215,10 @@ class PollReplyPacket(ArtNetPacket):
 
 class TodRequestPacket(ArtNetPacket):
 	opcode = 0x0080
-	
+
 	def __init__(self, **kwargs):
 		super(TodRequestPacket, self).__init__(**kwargs)
-	
+
 	def encode(self):
 		proto_lo, proto_hi = lohi(PROTOCOL_VERSION)
 		return ''.join([
