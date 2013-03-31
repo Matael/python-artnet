@@ -1,14 +1,17 @@
 import socket, struct, itertools, time
 
+
 HEADER = 'Art-Net\0'
 PROTOCOL_VERSION = 14
 
 ARTNET_PORT = 6454
 
+
 def lohi(i):
 	low = i & 0x00FF
 	high = (i & 0xFF00) >> 8
 	return low, high
+
 
 class ArtNetPacket(object):
 	opcode = None
@@ -44,6 +47,7 @@ class ArtNetPacket(object):
 				return packet_class.decode(address, data)
 		raise NotImplementedError('%r' % opcode)
 
+
 class DmxPacket(ArtNetPacket):
 	opcode = 0x0050
 
@@ -76,6 +80,7 @@ class DmxPacket(ArtNetPacket):
 	def decode(cls, address, data):
 		return cls(source=address)
 
+
 class PollPacket(ArtNetPacket):
 	opcode = 0x0020
 
@@ -99,6 +104,7 @@ class PollPacket(ArtNetPacket):
 			'B',   # level
 		]), data)
 		return cls(ttm=parts[4], priority=parts[5], source=address)
+
 
 class PollReplyPacket(ArtNetPacket):
 	opcode = 0x0021
@@ -212,6 +218,7 @@ class PollReplyPacket(ArtNetPacket):
 			# '26B', # 40 filler
 		]), data)
 		return cls(parts, source=address)
+
 
 class TodRequestPacket(ArtNetPacket):
 	opcode = 0x0080
