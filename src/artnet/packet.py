@@ -8,12 +8,21 @@ ARTNET_PORT = 6454
 
 
 def lohi(i):
+    """ Takes an hexet as argument and returns a tuple of its (low,high) bytes """
 	low = i & 0x00FF
 	high = (i & 0xFF00) >> 8
 	return low, high
 
 
 class ArtNetPacket(object):
+    """
+
+    General purpose ArtNetPacket class.
+
+    Implements just the basics and exist to be extented
+
+    """
+
 	opcode = None
 
 	def __init__(self, source=None, physical=0, universe=0):
@@ -35,6 +44,13 @@ class ArtNetPacket(object):
 
 	@classmethod
 	def parse(cls, address, data):
+        """
+
+        Try to guess type of packet from its opcode and returns decoded data.
+
+        If packet doesn't match any of the known opcodes, raises a NotImplementedError
+
+        """
 		[opcode] = struct.unpack('!H', data[8:10])
 		for k, packet_class in globals().items():
 			if not(k.endswith('Packet')):
@@ -49,11 +65,19 @@ class ArtNetPacket(object):
 
 
 class DmxPacket(ArtNetPacket):
+    """
+
+    DMX Packet interface class.
+
+
+    """
 	opcode = 0x0050
 
 	def __init__(self, frame=None, sequence=0, **kwargs):
 		super(DmxPacket, self).__init__(**kwargs)
+
 		from artnet import dmx
+
 		self.sequence = sequence
 		self.frame = frame or dmx.Frame()
 
@@ -82,6 +106,11 @@ class DmxPacket(ArtNetPacket):
 
 
 class PollPacket(ArtNetPacket):
+    """
+
+    Packet sent by a controller to poll nodes present on the network
+
+    """
 	opcode = 0x0020
 
 	def __init__(self, ttm=0x02, priority=0, **kwargs):
@@ -107,6 +136,13 @@ class PollPacket(ArtNetPacket):
 
 
 class PollReplyPacket(ArtNetPacket):
+    """
+
+    Packet responding to a PollPacket.
+
+    Note that artnet requires the poller to answer his own poll
+
+    """
 	opcode = 0x0021
 
 	def __init__(self, replydata, **kwargs):
@@ -221,6 +257,13 @@ class PollReplyPacket(ArtNetPacket):
 
 
 class TodRequestPacket(ArtNetPacket):
+    """
+
+    packet which request a Table of Devices (ToD).
+
+    Useful in RDM discovery.
+
+    """
 	opcode = 0x0080
 
 	def __init__(self, **kwargs):
