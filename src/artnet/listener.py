@@ -1,4 +1,8 @@
-import sys, threading, socket, time
+import sys
+import threading
+import socket
+import time
+
 
 def main():
 	if(len(sys.argv) < 2):
